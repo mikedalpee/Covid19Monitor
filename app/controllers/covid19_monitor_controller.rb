@@ -4,8 +4,7 @@ class Covid19MonitorController < ApplicationController
     if @@first_call
       Globals.set(:area_id,area_id('world'))
       Globals.set(:area_display_name, area_display_name(Globals.get(:area_id)))
-      Globals.set(:global_area_id,Globals.get(:area_id))
-      Covid19CaseScraperJob::perform_async
+       Covid19CaseScraperJob::perform_async
       @@first_call = false
     else
       if params.key?('id')

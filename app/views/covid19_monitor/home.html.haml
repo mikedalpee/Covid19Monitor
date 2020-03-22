@@ -3,7 +3,7 @@
     .appName
       COVID-19 Trends
     .infoTile#covid19-info-tile
-      = create_info_tile()
+      = create_info_tile(Globals.get(:area_id))
     %nav#covid19-area-buttons-container.collapse.bd-links
       = create_area_buttons(1)
   .col-md-9.col-xl-8.py-md-3.pl-md-5.bd-content

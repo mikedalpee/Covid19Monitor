@@ -54,7 +54,7 @@ class Covid19CaseScraperJob
         end
         if global_changed
           Rails.logger.log(Logger::INFO, "Data for the Global area changed.")
-          ActionCable.server.broadcast "Covid19ChartUpdateChannel", global: create_info_tile()
+          ActionCable.server.broadcast "Covid19ChartUpdateChannel", global: create_info_tile(Globals.get(:area_id))
         end
       else
         Rails.logger.log(Logger::ERROR, "No COVID-19 data found using url #{URL}")
