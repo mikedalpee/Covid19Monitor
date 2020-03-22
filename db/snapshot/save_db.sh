@@ -1,2 +1,2 @@
 #!/bin/bash
-pg_dump -U postgres -f covid19.sql covid19
+pg_dumpall -U postgres  | gzip -9 > covid19.sql.gz
