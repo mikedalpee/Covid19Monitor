@@ -1,0 +1,11 @@
+!!!
+%html
+  %head
+    %title #{full_title(yield(:title))}
+    %meta{content: "text/html; charset=UTF-8", "http-equiv" => "Content-Type"}
+    = action_cable_meta_tag
+    = stylesheet_pack_tag 'application', media: 'all'
+    = javascript_pack_tag 'application'
+  %body
+    .container-fluid
+      = yield

@@ -1,0 +1,7 @@
+production:
+  covid19:
+    url: "postgresql://covid19:covid19@localhost:5432/covid19"
+    pool: 20
+    timeout: 15
+    min_messages: error
+    reconnect: true
