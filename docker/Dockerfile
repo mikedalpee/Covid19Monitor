@@ -18,6 +18,7 @@ RUN useradd -m mike && \
 USER mike
 ENV HOME=/home/mike
 ENV APP=${HOME}/Covid19Monitor
+WORKDIR ${APP}
 
 RUN sudo apt-get update && sudo apt-get install -y \
 	build-essential \
@@ -53,8 +54,6 @@ RUN sudo apt-get install -y \
 
 RUN mkdir -p ${APP} && \
     git clone https://github.com/mikedalpee/Covid19Monitor.git
-
-WORKDIR ${APP}
 
 RUN source ${HOME}/.rvm/scripts/rvm; gem install bundler:2.1.4; bundle install && \
     yarn install --check--files
