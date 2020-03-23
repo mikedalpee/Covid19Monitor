@@ -35,6 +35,7 @@ RUN sudo apt-get install -y \
 	sudo service redis-server start
 
 RUN sudo apt-get install -y \
+    postgresql \
 	postgresql-server-dev-12 \
 	postgresql-client
 
@@ -44,14 +45,12 @@ RUN mkdir /home/mike/Covid19Monitor && \
 WORKDIR /home/mike/Covid19Monitor
 RUN source /home/mike/.rvm/scripts/rvm; gem install bundler:2.1.4; bundle install
 
-
-
 WORKDIR /home/mike/Covid19Monitor/db/snapshot
-RUN sudo cp pg_hba.conf postgresql.conf /etc/postgresql/12/main && \
-	sudo service postgresql start &&\
+RUN sudo cp pg_hba.conf postgresql.conf  /etc/postgresql/12/main
+RUN sudo service postgresql start && \
 	./restore_db.sh
 
 WORKDIR /home/mike
 
 RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-RUN sudo gdebi -n google-chrome-stable_current_amd64.deb
+RUN sudo gdebi -n ./google-chrome-stable_current_amd64.deb
