@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 base=$1
 ext=$2

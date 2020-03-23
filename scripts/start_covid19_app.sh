@@ -1,5 +1,6 @@
 #!/bin/bash
-`$(dirname "$0")`/start_postgresql.sh
-`$(dirname "$0")`/start_redis.sh
-`$(dirname "$0")`/start_puma.sh
+script_dir=$(dirname "$0")
+${script_dir}/start_postgresql.sh
+${script_dir}/start_redis.sh
+${script_dir}/start_puma.sh
 /bin/bash
