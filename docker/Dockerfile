@@ -66,6 +66,7 @@ RUN source ${HOME}/.nvm/nvm.sh; yarn install --check--files; yarn add nodejs boo
 
 RUN sudo cp ${APP}/db/snapshot/pg_hba.conf ${APP}/db/snapshot/postgresql.conf /etc/postgresql/12/main && \
     sudo service postgresql start && \
-	${APP}/db/snapshot/restore_db.sh
+	${APP}/db/snapshot/restore_db.sh && \
+	sudo service postgresql stop
 
 ENTRYPOINT ["/bin/bash", "-c", "${APP}/scripts/start_covid19_app.sh"]
