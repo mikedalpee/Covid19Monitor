@@ -1,2 +1,2 @@
 #!/bin/bash
-zcat covid19.sql.gz | psql -U postgres
+zcat `$(dirname "$0")`/covid19.sql.gz | psql -U postgres

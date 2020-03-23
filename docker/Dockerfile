@@ -60,7 +60,7 @@ RUN source ${HOME}/.rvm/scripts/rvm; gem install bundler:2.1.4; bundle install &
 
 RUN sudo cp ${APP}/db/snapshot/pg_hba.conf ${APP}/db/snapshot/postgresql.conf /etc/postgresql/12/main && \
     sudo service postgresql start && \
-	./restore_db.sh
+	${APP}/db/snapshot/restore_db.sh
 
 RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
     sudo gdebi -n ./google-chrome-stable_current_amd64.deb
