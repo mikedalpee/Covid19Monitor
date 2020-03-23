@@ -18,6 +18,10 @@ RUN useradd -m mike && \
 USER mike
 ENV HOME=/home/mike
 ENV APP=${HOME}/Covid19Monitor
+ENV RAILS_ENV=production
+ENV RUBYOPT="-W:no-deprecated -W:no-experimental"
+ENV SECRET_KEY_BASE=4da13406d9e1323919197c5d29c89c4c06f85ef1e6d3abce8c84d29fca2f39123029e46847f3a05fa8055c412a3925c303a2f3e1cde94418c2c69cd2de3fc4e4
+
 WORKDIR ${HOME}
 
 RUN sudo apt-get update && sudo apt-get install -y \
@@ -37,11 +41,7 @@ RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - && \
     sudo apt update && sudo apt install --no-install-recommends yarn
 
 RUN \curl -sSL https://get.rvm.io | bash && \
-    echo "export SECRET_KEY_BASE=4da13406d9e1323919197c5d29c89c4c06f85ef1e6d3abce8c84d29fca2f39123029e46847f3a05fa8055c412a3925c303a2f3e1cde94418c2c69cd2de3fc4e4" >> ${HOME}/.bashrc && \
-    echo "export RAILS_ENV=production" >> ${HOME}/.bashrc && \
-    echo "export RUBYOPT=-\"W:no-deprecated -W:no-experimental\"" >> ${HOME}/.bashrc && \
-    echo "source /home/mike/.rvm/scripts/rvm" >> ${HOME}/.bashrc
-RUN source ${HOME}/.rvm/scripts/rvm; rvm install ruby-2.7.0
+    source ${HOME}/.rvm/scripts/rvm; rvm install ruby-2.7.0
 
 RUN sudo apt-get install -y \
 	redis \
@@ -58,13 +58,11 @@ RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.d
 
 RUN git clone https://github.com/mikedalpee/Covid19Monitor.git
 
-WORKDIR ${APP}
+WORKDIR ${APP}RUN sudo cp ${APP}/db/snapshot/pg_hba.conf ${APP}/db/snapshot/postgresql.conf /etc/postgresql/12/main && \
+                  sudo service postgresql start && \
+              	${APP}/db/snapshot/restore_db.sh
 
 RUN source ${HOME}/.rvm/scripts/rvm; gem install bundler:2.1.4; bundle install && \
     source ${HOME}/.nvm/nvm.sh; yarn install --check--files
 
-RUN sudo cp ${APP}/db/snapshot/pg_hba.conf ${APP}/db/snapshot/postgresql.conf /etc/postgresql/12/main && \
-    sudo service postgresql start && \
-	${APP}/db/snapshot/restore_db.sh
-
-CMD ${APP}/scripts/start_covid19_app.sh
+ENTRYPOINT ["/bin/bash", "-c", "${APP}/scripts/start_covid19_app.sh"]
