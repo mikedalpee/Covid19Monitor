@@ -21,6 +21,7 @@ ENV APP=${HOME}/Covid19Monitor
 ENV RAILS_ENV=production
 ENV RUBYOPT="-W:no-deprecated -W:no-experimental"
 ENV SECRET_KEY_BASE=4da13406d9e1323919197c5d29c89c4c06f85ef1e6d3abce8c84d29fca2f39123029e46847f3a05fa8055c412a3925c303a2f3e1cde94418c2c69cd2de3fc4e4
+ENV RAILS_SERVE_STATIC_FILES=1
 
 WORKDIR ${HOME}
 
@@ -58,7 +59,6 @@ RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.d
     sudo gdebi -n ./google-chrome-stable_current_amd64.deb && \
     rm -f ./google-chrome-stable_current_amd64.deb
 
-RUN echo "reload"
 RUN git clone https://github.com/mikedalpee/Covid19Monitor.git
 
 WORKDIR ${APP}
