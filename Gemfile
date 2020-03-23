@@ -16,8 +16,6 @@ gem 'haml'
 gem 'haml-rails'
 gem 'listen'
 gem 'webdrivers'
-gem 'bootstrap'
-gem 'bootstrap_form'
 gem 'sassc-rails'
 gem "datagrid", git: "https://github.com/bogdan/datagrid.git"
 gem 'jquery-rails'

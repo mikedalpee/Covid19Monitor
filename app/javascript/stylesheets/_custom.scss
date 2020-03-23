@@ -1,4 +1,10 @@
-@import "bootstrap";
+@import "~bootstrap";
+@import "~bootstrap/scss/functions";
+@import "~bootstrap/scss/mixins";
+@import "~bootstrap/scss/variables";
+@import "./_variables";
+@import "./_sidebar";
+@import "./_content";
 
 .appName {
   font-size: 20px;
