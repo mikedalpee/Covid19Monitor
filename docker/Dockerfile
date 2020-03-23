@@ -65,9 +65,6 @@ WORKDIR ${APP}
 RUN source ${HOME}/.nvm/nvm.sh; yarn install --check--files; yarn add nodejs bootstrap chartkick highcharts && \
     source ${HOME}/.rvm/scripts/rvm; gem install bundler:2.1.4; bundle install; bundle exec rails assets:precompile
 
-RUN sudo cp ${APP}/db/snapshot/pg_hba.conf ${APP}/db/snapshot/postgresql.conf /etc/postgresql/12/main && \
-    sudo service postgresql start && \
-	${APP}/db/snapshot/restore_db.sh && \
-	sudo service postgresql stop
+RUN sudo cp ${APP}/db/snapshot/pg_hba.conf ${APP}/db/snapshot/postgresql.conf /etc/postgresql/12/main
 
 ENTRYPOINT ["/bin/bash", "-c", "${APP}/scripts/start_covid19_app.sh"]
