@@ -4,6 +4,7 @@ ENV TZ=America/New_York
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN apt-get update && apt-get install -y \
     apt-utils \
+    locales \
 	sudo
 RUN useradd -m mike && \
     echo "mike:mike" | chpasswd && \
@@ -11,7 +12,9 @@ RUN useradd -m mike && \
 	chsh -s /bin/bash mike && \
 	echo "mike ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/user && \
 	echo "Set disable_coredump false" >> /etc/sudo.conf && \
-	locale-gen en_US.UTF-8
+	locale-gen en_US.UTF-8 && \
+    update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+
 USER mike
 WORKDIR /home/mike
 
@@ -36,12 +39,11 @@ RUN \curl -sSL https://get.rvm.io | bash && \
     echo "export RAILS_ENV=production" >> /home/mike/.bashrc && \
     echo "export RUBYOPT=-\"W:no-deprecated -W:no-experimental\"" >> /home/mike/.bashrc && \
     echo "source /home/mike/.rvm/scripts/rvm" >> /home/mike/.bashrc
-RUN rvm install ruby-2.7.0
+RUN source /home/mike/.rvm/scripts/rvm; rvm install ruby-2.7.0
 
 RUN sudo apt-get install -y \
 	redis \
-	redis-tools && \
-	sudo service redis-server start
+	redis-tools &&
 
 RUN sudo apt-get install -y \
     postgresql \
@@ -52,7 +54,7 @@ RUN mkdir /home/mike/Covid19Monitor && \
     git clone https://github.com/mikedalpee/Covid19Monitor.git
 
 WORKDIR /home/mike/Covid19Monitor
-RUN gem install bundler:2.1.4; bundle install && \
+RUN source /home/mike/.rvm/scripts/rvm; gem install bundler:2.1.4; bundle install && \
     yarn install --check--files
 
 WORKDIR /home/mike/Covid19Monitor/db/snapshot
