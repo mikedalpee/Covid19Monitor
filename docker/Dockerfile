@@ -60,8 +60,9 @@ RUN git clone https://github.com/mikedalpee/Covid19Monitor.git
 
 WORKDIR ${APP}
 
-RUN source ${HOME}/.rvm/scripts/rvm; gem install bundler:2.1.4; bundle install && \
-    source ${HOME}/.nvm/nvm.sh; yarn install --check--files
+RUN source ${HOME}/.nvm/nvm.sh; yarn install --check--files && \
+    source ${HOME}/.rvm/scripts/rvm; gem install bundler:2.1.4; bundle install
+
 
 RUN sudo cp ${APP}/db/snapshot/pg_hba.conf ${APP}/db/snapshot/postgresql.conf /etc/postgresql/12/main && \
     sudo service postgresql start && \
