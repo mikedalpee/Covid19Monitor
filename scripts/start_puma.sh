@@ -7,4 +7,7 @@ then
   exit 0
 fi
 
-bundle exec rails s 2>&1 >> `$(dirname "$0")/save_file.sh /var/log/puma_3000 log`&
+script_dir=$(dirname "$0")
+log_dir=${script_dir}../log
+
+bundle exec rails s 2>&1 >> `${script_dir}/save_file.sh ${log_dir}puma_3000 log`&
