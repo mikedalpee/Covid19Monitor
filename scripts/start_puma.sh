@@ -9,4 +9,4 @@ fi
 
 script_dir=$(dirname "$0")
 log_dir=${script_dir}/../log
-bundle exec puma 2>&1 >> `${script_dir}/save_file.sh ${log_dir}/puma_3000 log`&
+bundle exec rails s 2>&1 >> `${script_dir}/save_file.sh ${log_dir}/puma_3000 log`&
