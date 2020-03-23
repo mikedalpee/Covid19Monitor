@@ -18,7 +18,7 @@ RUN useradd -m mike && \
 USER mike
 ENV HOME=/home/mike
 ENV APP=${HOME}/Covid19Monitor
-WORKDIR ${APP}
+WORKDIR ${HOME}
 
 RUN sudo apt-get update && sudo apt-get install -y \
 	build-essential \
@@ -52,8 +52,13 @@ RUN sudo apt-get install -y \
 	postgresql-server-dev-12 \
 	postgresql-client
 
-RUN mkdir -p ${APP} && \
-    git clone https://github.com/mikedalpee/Covid19Monitor.git
+RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+    sudo gdebi -n ./google-chrome-stable_current_amd64.deb && \
+    rm -f ./google-chrome-stable_current_amd64.deb
+
+RUN git clone https://github.com/mikedalpee/Covid19Monitor.git
+
+WORKDIR ${APP}
 
 RUN source ${HOME}/.rvm/scripts/rvm; gem install bundler:2.1.4; bundle install && \
     yarn install --check--files
@@ -61,8 +66,5 @@ RUN source ${HOME}/.rvm/scripts/rvm; gem install bundler:2.1.4; bundle install &
 RUN sudo cp ${APP}/db/snapshot/pg_hba.conf ${APP}/db/snapshot/postgresql.conf /etc/postgresql/12/main && \
     sudo service postgresql start && \
 	${APP}/db/snapshot/restore_db.sh
-
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
-    sudo gdebi -n ./google-chrome-stable_current_amd64.deb
 
 CMD ${APP}/scripts/start_covid19_app.sh
