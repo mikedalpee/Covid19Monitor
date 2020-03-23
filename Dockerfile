@@ -51,8 +51,7 @@ RUN sudo apt-get install -y \
 	postgresql-server-dev-12 \
 	postgresql-client
 
-RUN mkdir -p ${APP} && \
-    git clone https://github.com/mikedalpee/Covid19Monitor.git
+RUN mkdir -p ${APP}; git clone https://github.com/mikedalpee/Covid19Monitor.git && \
 
 WORKDIR ${APP}
 
