@@ -59,7 +59,6 @@ RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.d
     sudo gdebi -n ./google-chrome-stable_current_amd64.deb && \
     rm -f ./google-chrome-stable_current_amd64.deb
 
-RUN echo "reload again"
 RUN git clone https://github.com/mikedalpee/Covid19Monitor.git
 
 WORKDIR ${APP}
