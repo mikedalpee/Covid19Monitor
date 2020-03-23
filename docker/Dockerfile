@@ -59,11 +59,12 @@ RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.d
     sudo gdebi -n ./google-chrome-stable_current_amd64.deb && \
     rm -f ./google-chrome-stable_current_amd64.deb
 
+RUN echo "reload"
 RUN git clone https://github.com/mikedalpee/Covid19Monitor.git
 
 WORKDIR ${APP}
 
-RUN source ${HOME}/.nvm/nvm.sh; yarn install --check--files && \
+RUN source ${HOME}/.nvm/nvm.sh; yarn install --check--files; sudo ln -s `which node` /usr/bin/node && \
     source ${HOME}/.rvm/scripts/rvm; gem install bundler:2.1.4; \
     bundle config set without 'development test'; \
     bundle install; \
