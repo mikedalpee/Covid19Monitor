@@ -52,10 +52,8 @@ RUN sudo apt-get install -y \
 	postgresql-server-dev-12 \
 	postgresql-client
 
-RUN mkdir ${HOME}/Covid19Monitor && \
-    git clone https://github.com/mikedalpee/Covid19Monitor.git
-
-RUN source ${HOME}/.rvm/scripts/rvm; gem install bundler:2.1.4; bundle install && \
+RUN git clone https://github.com/mikedalpee/Covid19Monitor.git && \
+    source ${HOME}/.rvm/scripts/rvm; gem install bundler:2.1.4; bundle install && \
     yarn install --check--files
 
 RUN sudo cp ${APP}/db/snapshot/pg_hba.conf ${APP}/db/snapshot/postgresql.conf /etc/postgresql/12/main && \
