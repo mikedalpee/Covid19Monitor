@@ -19,16 +19,16 @@ class Covid19CaseScraperJob
     a.save!
     c = Case.new
     c.area_id = a.area_id
-    c.fatal = area['totalDeaths']
-    c.recovered = area['totalRecovered']
-    c.active = area['totalConfirmed'] - c.fatal - c.recovered
+    c.fatal = area['totalDeaths'].to_i
+    c.recovered = area['totalRecovered'].to_i
+    c.active = area['totalConfirmed'].to_i - c.fatal - c.recovered
     c.updated_at = area['lastUpdated']
     begin
       c.save!
       selected_changed = (a.area_id == Globals.get(:area_id))
       global_changed = (a.area_id == Globals.get(:global_area_id))
     rescue ActiveRecord::RecordNotUnique => e #Data didn't change from last check
-      Rails.logger.log(Logger::WARN,"Data for #{area['id']} hasn't been updated since last update at #{c.updated_at}/#{area['lastUpdated']}")
+      #Rails.logger.log(Logger::WARN,"Data for #{area['id']} hasn't been updated since last update at #{c.updated_at}/#{area['lastUpdated']}")
     rescue => e
       Rails.logger.log(Logger::ERROR, "Case could not be added to database: #{e}")
     end
@@ -50,7 +50,7 @@ class Covid19CaseScraperJob
         selected_changed,global_changed = process_cases(JSON.parse(json.text))
         if selected_changed
           Rails.logger.log(Logger::INFO, "Data for selected area #{Globals.get(:area_display_name)} changed.")
-          ActionCable.server.broadcast "Covid19ChartUpdateChannel", selected: create_cases_chart('covid-19-chart',Globals.get(:area_id))
+          ActionCable.server.broadcast "Covid19ChartUpdateChannel", selected: create_cases_chart('covid-19-chart',Globals.get(:area_id),Globals.get(:data_interval))
         end
         if global_changed
           Rails.logger.log(Logger::INFO, "Data for the Global area changed.")

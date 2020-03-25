@@ -1,11 +1,28 @@
-.row.flex-xl-nowrap
-  .col-md-3.col-xl-2.bd-sidebar
-    .appName
+.flex-row
+  .flex-column
+    .flex-item.appName
       COVID-19 Trends
-    .infoTile#covid19-info-tile
+    .flex-item.infoTile#covid19-info-tile
       = create_info_tile(Globals.get(:area_id))
-    %nav#covid19-area-buttons-container.collapse.bd-links
-      = create_area_buttons(1)
-  .col-md-9.col-xl-8.py-md-3.pl-md-5.bd-content
-    #covid19-chart-container.covid19-chart-container
-      = create_cases_chart('covid-19-chart',Globals.get(:area_id))
+    %nav.flex-item#covid19-selected_buttons-container
+      = create_selected_buttons()
+    %nav.flex-item#covid19-area-buttons-container.flex-list
+      = create_area_buttons(Globals.get(:area_id))
+  .flex-columnn
+    .flex-item#covid19-chart-container
+      = create_cases_chart('covid-19-chart',Globals.get(:area_id),Globals.get(:data_interval))
+    :javascript
+      jQuery(function($) {
+        $("#plot_interval_id").change(function() {
+          var state = $('select#plot_interval_id :selected').val();
+          if(state == "") state="0";
+          jQuery.getJSON('/set_interval/' + state, function(data){
+            $('#covid19-chart-container').html(data.chart)})
+          return false;
+        });
+      })
+    .flex-item
+      %label Plot Interval
+      %br/
+      %select#plot_interval_id{:name => "plot_interval[id]"}
+        = create_interval_options()

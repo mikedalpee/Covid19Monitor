@@ -2,19 +2,43 @@
 @import "~bootstrap/scss/functions";
 @import "~bootstrap/scss/mixins";
 @import "~bootstrap/scss/variables";
-@import "./_variables";
-@import "./_sidebar";
-@import "./_content";
 
-.appName {
-  font-size: 20px;
+.flex-item {
+  margin: 10px;
+}
+
+.flex-row, html, body {
+  height: 100%;
+  margin: 0;
+}
+
+.flex-row{
+  display: flex;
+  flex-direction: row;
+}
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-list {
+  flex: 1;
+  height: 100%;
+  overflow: auto;
+  margin: 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, .05);
+}
+
+appName {
+  font-size: 40px;
   font-weight: 600;
   margin-bottom: 25px;
   line-height: 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, .05);
 }
 
 .infoTile {
-  border-bottom: #DDD 1px solid;
+  border-bottom: 1px solid rgba(0, 0, 0, .05);
 }
 
 .infoTile .title {
@@ -35,7 +59,7 @@
 .legend {
   display: grid;
   padding: 20px 0;
-  grid-template-columns: 8px auto min-content;
+  grid-template-columns: 8px auto auto min-content;
   align-items: center;
   grid-gap: 16px 8px;
   font-size: 13px;
@@ -52,3 +76,8 @@
   color: #767676;
   text-align: right;
 }
+
+nav#covid19-selected_buttons-container {
+  border-bottom: 1px solid rgba(0, 0, 0, .05);
+}
+
