@@ -15,11 +15,9 @@ consumer.subscriptions.create("Covid19ChartUpdateChannel", {
     // Called when there's incoming data on the websocket for this channel
     console.log("Received data from Covid19ChartUpdateChannel!")
 
-    if ("selected" in data) {
-      $('#covid19-chart-container').html(data.selected);
-    }
-    else if ("global" in data) {
-      $('#covid19-info-tile').html(data.global);
+    if ("info_tile" in data) {
+      $('#covid19-info-tile').html(data.info_tile);
+      $('#covid19-cases-chart').html(data.cases_chart);
     }
     else
     {

@@ -3,21 +3,34 @@
     .flex-item.appName
       COVID-19 Trends
     .flex-item.infoTile#covid19-info-tile
-      = create_info_tile(Globals.get(:area_id))
-    %nav.flex-item#covid19-selected_buttons-container
+      = create_info_tile()
+    :javascript
+       jQuery(function($) {
+        $("#query_id").change(function() {
+          var state = $('select#query_id :selected').val();
+          if(state == "") state="1";
+          location.replace('/set_query/' + state);
+          return false;
+        });
+      })
+    .flex-item
+      %label Select by Query
+      %br/
+      %select#query_id{:name => "query[id]"}
+        = create_query_options()
+    %nav.flex-item#covid19-selected_buttons
       = create_selected_buttons()
-    %nav.flex-item#covid19-area-buttons-container.flex-list
-      = create_area_buttons(Globals.get(:area_id))
+    %nav.flex-item#covid19-area-buttons.flex-list
+      = create_area_buttons()
   .flex-columnn
-    .flex-item#covid19-chart-container
-      = create_cases_chart('covid-19-chart',Globals.get(:area_id),Globals.get(:data_interval))
+    .flex-item#covid19-cases-chart
+      = create_cases_chart()
     :javascript
       jQuery(function($) {
         $("#plot_interval_id").change(function() {
           var state = $('select#plot_interval_id :selected').val();
-          if(state == "") state="0";
-          jQuery.getJSON('/set_interval/' + state, function(data){
-            $('#covid19-chart-container').html(data.chart)})
+          if(state == "") state="1";
+          location.replace('/set_interval/' + state);
           return false;
         });
       })

@@ -9,7 +9,6 @@ class Covid19CaseScraperJob
 
   def process_cases(area)
     selected_changed = false
-    global_changed = false
     a = (Area.find_by(name: area['id']) || Area.new(name: area['id']))
     if !area['parentId'].nil?
       p =  Area.find_by(name: area['parentId'])
@@ -26,18 +25,16 @@ class Covid19CaseScraperJob
     begin
       c.save!
       selected_changed = (a.area_id == Globals.get(:area_id))
-      global_changed = (a.area_id == Globals.get(:global_area_id))
     rescue ActiveRecord::RecordNotUnique => e #Data didn't change from last check
       #Rails.logger.log(Logger::WARN,"Data for #{area['id']} hasn't been updated since last update at #{c.updated_at}/#{area['lastUpdated']}")
     rescue => e
       Rails.logger.log(Logger::ERROR, "Case could not be added to database: #{e}")
     end
     area['areas']&.each do |area|
-      selected_changed_below,global_changed_below = process_cases(area)
+      selected_changed_below = process_cases(area)
       selected_changed ||= selected_changed_below
-      global_changed ||= global_changed_below
     end
-    return selected_changed,global_changed
+    return selected_changed
   end
 
   def perform(*args)
@@ -47,14 +44,13 @@ class Covid19CaseScraperJob
       session.goto_url(URL)
       if (json = session.browser.element(xpath: "//pre")).exists?
         Rails.logger.log(Logger::INFO, "Updating COVID-19 Database")
-        selected_changed,global_changed = process_cases(JSON.parse(json.text))
+        selected_changed = process_cases(JSON.parse(json.text))
         if selected_changed
-          Rails.logger.log(Logger::INFO, "Data for selected area #{Globals.get(:area_display_name)} changed.")
-          ActionCable.server.broadcast "Covid19ChartUpdateChannel", selected: create_cases_chart('covid-19-chart',Globals.get(:area_id),Globals.get(:data_interval))
-        end
-        if global_changed
-          Rails.logger.log(Logger::INFO, "Data for the Global area changed.")
-          ActionCable.server.broadcast "Covid19ChartUpdateChannel", global: create_info_tile(Globals.get(:area_id))
+          Rails.logger.log(Logger::INFO, "Data for selected area #{area_display_name(Globals.get(:area_id))} changed.")
+          ActionCable.server.broadcast(
+            "Covid19ChartUpdateChannel",
+            {cases_chart: create_cases_chart(),
+             info_tile: create_info_tile()})
         end
       else
         Rails.logger.log(Logger::ERROR, "No COVID-19 data found using url #{URL}")

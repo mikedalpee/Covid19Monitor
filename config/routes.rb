@@ -4,4 +4,5 @@ Rails.application.routes.draw do
   get '/select_area/:id', to: 'covid19_monitor#select_area', as: 'select_area'
   get '/unselect_area/:id', to: 'covid19_monitor#unselect_area', as: 'unselect_area'
   get '/set_interval/:interval', to: 'covid19_monitor#set_interval', as: 'set_interval'
+  get '/set_query/:query_id', to: 'covid19_monitor#set_query', as: 'set_query'
 end
