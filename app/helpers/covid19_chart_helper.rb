@@ -19,26 +19,72 @@ module Covid19ChartHelper
     number_to_percentage(fraction)
   end
 
+  def compute_average_speed(average_speed,value,updated_at)
+    if average_speed[:last_value].nil?
+      average_speed[:last_value] = value
+      average_speed[:last_update] = updated_at
+    else
+      delta_t = average_speed[:last_update] - updated_at
+      delta_a = average_speed[:last_value] - value
+      speed = delta_a.to_f/delta_t.to_f
+      average_speed[:total_elapsed_sample_time] += delta_t
+      average_speed[:speed_samples] += 1
+      average_speed[:speed_samples_total] += speed
+      average_speed[:average_speed] = average_speed[:speed_samples_total]/average_speed[:speed_samples]
+      average_speed[:last_value] = value
+      average_speed[:last_update] = updated_at
+    end
+  end
+
   def create_info_tile()
     area_id = Globals.get(:area_id)
-    cases = Case.where(area_id: area_id, updated_at: Case.select('MAX(updated_at)').where(area_id: area_id))&.first
-    total_confirmed = cases&.active+cases&.recovered+cases&.fatal
+    cases = Case.where(area_id: area_id).distinct.order(updated_at: :desc)
+    latest_case = cases.first
+    total_confirmed = latest_case&.active+latest_case&.recovered+latest_case&.fatal
+    active_average_speed = {last_value: nil, last_update: nil, average_speed: 0.0, speed_samples:0, speed_samples_total: 0.0, total_elapsed_sample_time: 0.0}
+    recovered_average_speed = {last_value: nil, last_update: nil, average_speed: 0.0, speed_samples:0, speed_samples_total: 0.0, total_elapsed_sample_time: 0.0}
+    fatal_average_speed = {last_value: nil, last_update: nil, average_speed: 0.0, speed_samples:0, speed_samples_total: 0.0, total_elapsed_sample_time: 0.0}
+    active_done = false
+    recovered_done = false
+    fatal_done = false
+    cases.each do |a_case|
+      break if active_done && recovered_done && fatal_done
+
+      if !active_done
+        compute_average_speed(active_average_speed,a_case.active,a_case.updated_at)
+        active_done = active_average_speed[:total_elapsed_sample_time] >= 172800 #2 days
+      end
+
+      if !recovered_done
+        compute_average_speed(recovered_average_speed,a_case.recovered,a_case.updated_at)
+        recovered_done = recovered_average_speed[:total_elapsed_sample_time] >= 172800 #2 days
+      end
+
+      if !fatal_done
+        compute_average_speed(fatal_average_speed,a_case.fatal,a_case.updated_at)
+        fatal_done = fatal_average_speed[:total_elapsed_sample_time] >= 172800 #2 days
+      end
+    end
+
     info_tile =
       %&<div class="title" title="Total Confirmed Cases">Total Confirmed Cases</div>
         <div class="confirmed">#{number_with_delimiter(total_confirmed)}</div>
         <div class="legend">
           <div class="color" style="background: orange;"></div>
           <div class="description">Active cases</div>
-          <div class="total">#{number_with_delimiter(cases&.active)}</div>
-          <div class="total">(#{percentage(cases&.active,total_confirmed)})</div>
+          <div class="total">#{number_with_delimiter(latest_case&.active)}</div>
+          <div class="total">(#{percentage(latest_case&.active,total_confirmed)})</div>
+          <div class="total">(#{(active_average_speed[:average_speed]*86400).round(3)})</div>
           <div class="color" style="background: green;"></div>
           <div class="description">Recovered cases</div>
-          <div class="total">#{number_with_delimiter(cases&.recovered)}</div>
-          <div class="total">(#{percentage(cases&.recovered,total_confirmed)})</div>
+          <div class="total">#{number_with_delimiter(latest_case&.recovered)}</div>
+          <div class="total">(#{percentage(latest_case&.recovered,total_confirmed)})</div>
+          <div class="total">(#{(recovered_average_speed[:average_speed]*86400).round(3)})</div>
           <div class="color" style="background: red;"></div>
           <div class="description">Fatal cases</div>
-          <div class="total">#{number_with_delimiter(cases&.fatal)}</div>
-          <div class="total">(#{percentage(cases&.fatal,total_confirmed)})</div>
+          <div class="total">#{number_with_delimiter(latest_case&.fatal)}</div>
+          <div class="total">(#{percentage(latest_case&.fatal,total_confirmed)})</div>
+          <div class="total">(#{(fatal_average_speed[:average_speed]*86400).round(3)})</div>
         </div>
       &
     return info_tile.html_safe
@@ -152,19 +198,19 @@ module Covid19ChartHelper
     selected = Globals.get(:query_id)
     option_str = option("none","None",selected)
     option_str += option("hac","Highest Active Cases",selected)
-    option_str += option("hap","Highest Active Percentage",selected)
+    option_str += option("hap","Highest Active Case Percentage",selected)
     option_str += option("lac","Lowest Active Cases",selected)
-    option_str += option("lap","Lowest Active Percentage",selected)
+    option_str += option("lap","Lowest Active Case Percentage",selected)
     option_str += option("hrc","Highest Recovered Cases",selected)
-    option_str += option("hrp","Highest Recovered Percentage",selected)
+    option_str += option("hrp","Highest Recovered Case Percentage",selected)
     option_str += option("lrc","Lowest Recovered Cases",selected)
-    option_str += option("lrp","Lowest Recovered Percentage",selected)
+    option_str += option("lrp","Lowest Recovered Case Percentage",selected)
     option_str += option("hfc","Highest Fatal Cases",selected)
-    option_str += option("hfp","Highest Fatal Percentage",selected)
+    option_str += option("hfp","Highest Fatal Case Percentage",selected)
     option_str += option("lfc","Lowest Fatal Cases",selected)
-    option_str += option("lfp","Lowest Fatal Percentage",selected)
-    option_str += option("htc","Highest Total Confirmed",selected)
-    option_str += option("ltc","Lowest Total Confirmed",selected)
+    option_str += option("lfp","Lowest Fatal Case Percentage",selected)
+    option_str += option("htc","Highest Total Confirmed Cases",selected)
+    option_str += option("ltc","Lowest Total Confirmed Cases",selected)
     option_str.html_safe
   end
 

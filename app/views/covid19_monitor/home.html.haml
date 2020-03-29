@@ -13,12 +13,12 @@
           return false;
         });
       })
-    .flex-item
+    .flex-item#covid19-select-by-query
       %label Select by Query
       %br/
       %select#query_id{:name => "query[id]"}
         = create_query_options()
-    %nav.flex-item#covid19-selected_buttons
+    %nav.flex-item#covid19-selected-buttons
       = create_selected_buttons()
     %nav.flex-item#covid19-area-buttons.flex-list
       = create_area_buttons()

@@ -24,7 +24,7 @@ class Covid19CaseScraperJob
     c.updated_at = area['lastUpdated']
     begin
       c.save!
-      selected_changed = (a.area_id == Globals.get(:area_id))
+      selected_changed = (c.area_id == Globals.get(:area_id))
     rescue ActiveRecord::RecordNotUnique => e #Data didn't change from last check
       #Rails.logger.log(Logger::WARN,"Data for #{area['id']} hasn't been updated since last update at #{c.updated_at}/#{area['lastUpdated']}")
     rescue => e

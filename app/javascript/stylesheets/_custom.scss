@@ -29,11 +29,11 @@
   border-bottom: 1px solid rgba(0, 0, 0, .05);
 }
 
-appName {
-  font-size: 40px;
+.appName {
+  font-size: 30px;
   font-weight: 600;
-  margin-bottom: 25px;
   line-height: 24px;
+  margin-bottom: 5px;
   border-bottom: 1px solid rgba(0, 0, 0, .05);
 }
 
@@ -59,7 +59,7 @@ appName {
 .legend {
   display: grid;
   padding: 20px 0;
-  grid-template-columns: 8px auto auto min-content;
+  grid-template-columns: 8px auto auto auto min-content;
   align-items: center;
   grid-gap: 16px 8px;
   font-size: 13px;
@@ -77,7 +77,13 @@ appName {
   text-align: right;
 }
 
-nav#covid19-selected_buttons-container {
+nav#covid19-selected-buttons{
+  margin-bottom: 5px;
+  border-bottom: 1px solid rgba(0, 0, 0, .05);
+}
+
+div#covid19-select-by-query{
+  margin-bottom: 5px;
   border-bottom: 1px solid rgba(0, 0, 0, .05);
 }
 
