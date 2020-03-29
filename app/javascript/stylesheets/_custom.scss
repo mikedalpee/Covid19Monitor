@@ -59,7 +59,7 @@
 .legend {
   display: grid;
   padding: 20px 0;
-  grid-template-columns: 8px auto auto auto min-content;
+  grid-template-columns: 8px auto auto auto auto auto;
   align-items: center;
   grid-gap: 16px 8px;
   font-size: 13px;

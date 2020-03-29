@@ -11,28 +11,33 @@ module Covid19ChartHelper
     Area.find_by(name: name).area_id
   end
 
-  def percentage(numerator,denominator)
+  def ratio(numerator,denominator)
     fraction = 0.0
     if denominator.to_f > 0.0
-      fraction = (numerator.to_f/denominator.to_f)*100.0
+      fraction = (numerator.to_f/denominator.to_f)
     end
-    number_to_percentage(fraction)
+    fraction
   end
 
-  def compute_average_speed(average_speed,value,updated_at)
-    if average_speed[:last_value].nil?
-      average_speed[:last_value] = value
-      average_speed[:last_update] = updated_at
+  def percentage(numerator,denominator)
+    number_to_percentage(ratio(numerator,denominator)*100.0,precision: 1)
+  end
+
+  def collect_samples(samples, value, updated_at)
+    if samples[:last_value].nil?
+      samples[:last_value] = value
+      samples[:last_update] = updated_at
     else
-      delta_t = average_speed[:last_update] - updated_at
-      delta_a = average_speed[:last_value] - value
-      speed = delta_a.to_f/delta_t.to_f
-      average_speed[:total_elapsed_sample_time] += delta_t
-      average_speed[:speed_samples] += 1
-      average_speed[:speed_samples_total] += speed
-      average_speed[:average_speed] = average_speed[:speed_samples_total]/average_speed[:speed_samples]
-      average_speed[:last_value] = value
-      average_speed[:last_update] = updated_at
+      delta_t = samples[:last_update] - updated_at
+      delta_a = samples[:last_value] - value
+      samples[:total_elapsed_sample_time] += delta_t
+      samples[:samples_total] += delta_a
+      if (samples[:total_elapsed_sample_time]/86400).floor > samples[:samples_per_day].length
+        samples[:samples_per_day].push(samples[:samples_total])
+       samples[:samples_total] = 0
+      end
+      samples[:last_value] = value
+      samples[:last_update] = updated_at
     end
   end
 
@@ -41,9 +46,9 @@ module Covid19ChartHelper
     cases = Case.where(area_id: area_id).distinct.order(updated_at: :desc)
     latest_case = cases.first
     total_confirmed = latest_case&.active+latest_case&.recovered+latest_case&.fatal
-    active_average_speed = {last_value: nil, last_update: nil, average_speed: 0.0, speed_samples:0, speed_samples_total: 0.0, total_elapsed_sample_time: 0.0}
-    recovered_average_speed = {last_value: nil, last_update: nil, average_speed: 0.0, speed_samples:0, speed_samples_total: 0.0, total_elapsed_sample_time: 0.0}
-    fatal_average_speed = {last_value: nil, last_update: nil, average_speed: 0.0, speed_samples:0, speed_samples_total: 0.0, total_elapsed_sample_time: 0.0}
+    active_samples = {last_value: nil, last_update: nil, samples_total: 0, samples_per_day: [], total_elapsed_sample_time: 0.0}
+    recovered_samples = {last_value: nil, last_update: nil, samples_total: 0, samples_per_day: [], total_elapsed_sample_time: 0.0}
+    fatal_samples = {last_value: nil, last_update: nil, samples_total: 0, samples_per_day: [], total_elapsed_sample_time: 0.0}
     active_done = false
     recovered_done = false
     fatal_done = false
@@ -51,18 +56,18 @@ module Covid19ChartHelper
       break if active_done && recovered_done && fatal_done
 
       if !active_done
-        compute_average_speed(active_average_speed,a_case.active,a_case.updated_at)
-        active_done = active_average_speed[:total_elapsed_sample_time] >= 172800 #2 days
+        collect_samples(active_samples, a_case.active, a_case.updated_at)
+        active_done = active_samples[:total_elapsed_sample_time] >= 172800 #2 days
       end
 
       if !recovered_done
-        compute_average_speed(recovered_average_speed,a_case.recovered,a_case.updated_at)
-        recovered_done = recovered_average_speed[:total_elapsed_sample_time] >= 172800 #2 days
+        collect_samples(recovered_samples, a_case.recovered, a_case.updated_at)
+        recovered_done = recovered_samples[:total_elapsed_sample_time] >= 172800 #2 days
       end
 
       if !fatal_done
-        compute_average_speed(fatal_average_speed,a_case.fatal,a_case.updated_at)
-        fatal_done = fatal_average_speed[:total_elapsed_sample_time] >= 172800 #2 days
+        collect_samples(fatal_samples, a_case.fatal, a_case.updated_at)
+        fatal_done = fatal_samples[:total_elapsed_sample_time] >= 172800 #2 days
       end
     end
 
@@ -74,17 +79,20 @@ module Covid19ChartHelper
           <div class="description">Active cases</div>
           <div class="total">#{number_with_delimiter(latest_case&.active)}</div>
           <div class="total">(#{percentage(latest_case&.active,total_confirmed)})</div>
-          <div class="total">(#{(active_average_speed[:average_speed]*86400).round(3)})</div>
+          <div class="total">(#{active_samples[:samples_per_day][0]})</div>
+          <div class="total">(#{ratio(active_samples[:samples_per_day][0],active_samples[:samples_per_day][1]).round(1)})</div>
           <div class="color" style="background: green;"></div>
           <div class="description">Recovered cases</div>
           <div class="total">#{number_with_delimiter(latest_case&.recovered)}</div>
           <div class="total">(#{percentage(latest_case&.recovered,total_confirmed)})</div>
-          <div class="total">(#{(recovered_average_speed[:average_speed]*86400).round(3)})</div>
+          <div class="total">(#{recovered_samples[:samples_per_day][0]})</div>
+          <div class="total">(#{ratio(recovered_samples[:samples_per_day][0],recovered_samples[:samples_per_day][1]).round(1)})</div>
           <div class="color" style="background: red;"></div>
           <div class="description">Fatal cases</div>
           <div class="total">#{number_with_delimiter(latest_case&.fatal)}</div>
           <div class="total">(#{percentage(latest_case&.fatal,total_confirmed)})</div>
-          <div class="total">(#{(fatal_average_speed[:average_speed]*86400).round(3)})</div>
+          <div class="total">(#{fatal_samples[:samples_per_day][0]})</div>
+          <div class="total">(#{ratio(fatal_samples[:samples_per_day][0],fatal_samples[:samples_per_day][1]).round(1)})</div>
         </div>
       &
     return info_tile.html_safe
