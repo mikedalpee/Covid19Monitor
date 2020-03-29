@@ -13,7 +13,7 @@ module Covid19ChartHelper
 
   def ratio(numerator,denominator)
     fraction = 0.0
-    if denominator.to_f > 0.0
+    if denominator.to_f != 0.0
       fraction = (numerator.to_f/denominator.to_f)
     end
     fraction
@@ -34,7 +34,7 @@ module Covid19ChartHelper
       samples[:samples_total] += delta_a
       if (samples[:total_elapsed_sample_time]/86400).floor > samples[:samples_per_day].length
         samples[:samples_per_day].push(samples[:samples_total])
-       samples[:samples_total] = 0
+        samples[:samples_total] = 0
       end
       samples[:last_value] = value
       samples[:last_update] = updated_at
