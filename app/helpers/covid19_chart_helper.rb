@@ -20,7 +20,11 @@ module Covid19ChartHelper
   end
 
   def percentage(numerator,denominator)
-    number_to_percentage(ratio(numerator,denominator)*100.0,precision: 1)
+    number_to_percentage((ratio(numerator,denominator)*100.0).round(1),precision: 1)
+  end
+
+  def progression(samples)
+    ratio(samples[0].to_i+samples[1].to_i,samples[2].to_i+samples[3].to_i)
   end
 
   def collect_samples(samples, value, updated_at)
@@ -57,17 +61,17 @@ module Covid19ChartHelper
 
       if !active_done
         collect_samples(active_samples, a_case.active, a_case.updated_at)
-        active_done = active_samples[:total_elapsed_sample_time] >= 172800 #2 days
+        active_done = active_samples[:total_elapsed_sample_time] >= 86400*4 #4 days
       end
 
       if !recovered_done
         collect_samples(recovered_samples, a_case.recovered, a_case.updated_at)
-        recovered_done = recovered_samples[:total_elapsed_sample_time] >= 172800 #2 days
+        recovered_done = recovered_samples[:total_elapsed_sample_time] >= 86400*4 #4 days
       end
 
       if !fatal_done
         collect_samples(fatal_samples, a_case.fatal, a_case.updated_at)
-        fatal_done = fatal_samples[:total_elapsed_sample_time] >= 172800 #2 days
+        fatal_done = fatal_samples[:total_elapsed_sample_time] >= 86400*4 #4 days
       end
     end
 
@@ -80,19 +84,19 @@ module Covid19ChartHelper
           <div class="total">#{number_with_delimiter(latest_case&.active)}</div>
           <div class="total">(#{percentage(latest_case&.active,total_confirmed)})</div>
           <div class="total">(#{active_samples[:samples_per_day][0]})</div>
-          <div class="total">(#{ratio(active_samples[:samples_per_day][0],active_samples[:samples_per_day][1]).round(1)})</div>
+          <div class="total">(#{progression(active_samples[:samples_per_day]).round(1)})</div>
           <div class="color" style="background: green;"></div>
           <div class="description">Recovered cases</div>
           <div class="total">#{number_with_delimiter(latest_case&.recovered)}</div>
           <div class="total">(#{percentage(latest_case&.recovered,total_confirmed)})</div>
           <div class="total">(#{recovered_samples[:samples_per_day][0]})</div>
-          <div class="total">(#{ratio(recovered_samples[:samples_per_day][0],recovered_samples[:samples_per_day][1]).round(1)})</div>
+          <div class="total">(#{progression(recovered_samples[:samples_per_day]).round(1)})</div>
           <div class="color" style="background: red;"></div>
           <div class="description">Fatal cases</div>
           <div class="total">#{number_with_delimiter(latest_case&.fatal)}</div>
           <div class="total">(#{percentage(latest_case&.fatal,total_confirmed)})</div>
           <div class="total">(#{fatal_samples[:samples_per_day][0]})</div>
-          <div class="total">(#{ratio(fatal_samples[:samples_per_day][0],fatal_samples[:samples_per_day][1]).round(1)})</div>
+          <div class="total">(#{progression(fatal_samples[:samples_per_day]).round(1)})</div>
         </div>
       &
     return info_tile.html_safe

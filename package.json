@@ -6,6 +6,7 @@
     "@rails/webpacker": "^5.0.0",
     "bootstrap": "^4.4.1",
     "chartkick": "^3.2.0",
+    "coronapi": "^0.5.1",
     "highcharts": "^8.0.4",
     "jquery": "^3.4.1",
     "popper.js": "^1.16.1",

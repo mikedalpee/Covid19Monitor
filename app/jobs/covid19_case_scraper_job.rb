@@ -3,8 +3,11 @@ class Covid19CaseScraperJob
   require File.expand_path('../../helpers/watir', __FILE__)
   include Covid19ChartHelper
   include ActiveSupport::Inflector
+  require 'open-uri'
 
-  URL="https://www.bing.com/covid/data?IG=138A57D12AAC48F0A60D4B9803277546"
+
+  URL="https://www.bing.com/covid"
+  USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.120 Safari/537.36"
   CASE_UPDATE_INTERVAL = 60*5 #5 minutes
 
   def process_cases(area)
@@ -38,13 +41,14 @@ class Covid19CaseScraperJob
   end
 
   def perform(*args)
-    session = ScrapeSession.new(headless: true)
-    while !session.terminated?
-      session.open
-      session.goto_url(URL)
-      if (json = session.browser.element(xpath: "//pre")).exists?
+    loop do
+      begin
+        page = Nokogiri::HTML(URI.open(URL,'User-Agent' => USER_AGENT, read_timeout: 10))
+        data = page.xpath("//body/div/script").text
+        session = ScrapeSession.new(headless: true)
+        json = data[9,data.length-10]
         Rails.logger.log(Logger::INFO, "Updating COVID-19 Database")
-        selected_changed = process_cases(JSON.parse(json.text))
+        selected_changed = process_cases(JSON.parse(json))
         if selected_changed
           Rails.logger.log(Logger::INFO, "Data for selected area #{area_display_name(Globals.get(:area_id))} changed.")
           ActionCable.server.broadcast(
@@ -52,10 +56,9 @@ class Covid19CaseScraperJob
             {cases_chart: create_cases_chart(),
              info_tile: create_info_tile()})
         end
-      else
-        Rails.logger.log(Logger::ERROR, "No COVID-19 data found using url #{URL}")
+      rescue => e
+        Rails.logger.log(Logger::INFO, "Unable to get covid data from #{URL}")
       end
-      session.close
       sleep(CASE_UPDATE_INTERVAL)
     end
   end

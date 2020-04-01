@@ -59,7 +59,7 @@ class Covid19MonitorController < ApplicationController
     <<-SQL
         SELECT c.area_id, #{function}(#{column}) target_value 
         FROM areas a, cases c 
-        WHERE c.area_id = a.area_id AND a.parent_area_id = 1 AND (c.area_id,updated_at) IN 
+        WHERE c.area_id = a.area_id AND a.parent_area_id = #{Globals.get(:area_id)} AND (c.area_id,updated_at) IN 
           (SELECT area_id, MAX(updated_at) max_updated_at 
            FROM cases 
            GROUP BY area_id) 
@@ -76,37 +76,37 @@ class Covid19MonitorController < ApplicationController
       query = create_query(:highest,"active")
       process_query(query)
     when "hap"
-      query = create_query(:highest,"CAST(active AS FLOAT)/(active+recovered+fatal)")
+      query = create_query(:highest,"COALESCE(CAST(active AS FLOAT)/NULLIF(active+recovered+fatal,0),CAST(0 AS FLOAT))")
       process_query(query)
     when "lac"
       query = create_query(:lowest,"active")
       process_query(query)
     when "lap"
-      query = create_query(:lowest,"CAST(active AS FLOAT)/(active+recovered+fatal)")
+      query = create_query(:lowest,"COALESCE(CAST(active AS FLOAT)/NULLIF(active+recovered+fatal,0),CAST(0 AS FLOAT))")
       process_query(query)
     when "hrc"
       query = create_query(:highest,"recovered")
       process_query(query)
     when "hrp"
-      query = create_query(:highest,"CAST(recovered AS FLOAT)/(active+recovered+fatal)")
+      query = create_query(:highest,"COALESCE(CAST(recovered AS FLOAT)/NULLIF(active+recovered+fatal,0),CAST(0 AS FLOAT))")
       process_query(query)
     when "lrc"
       query = create_query(:lowest,"recovered")
       process_query(query)
     when "lrp"
-      query = create_query(:lowest,"CAST(recovered AS FLOAT)/(active+recovered+fatal)")
+      query = create_query(:lowest,"COALESCE(CAST(recovered AS FLOAT)/NULLIF(active+recovered+fatal,0),CAST(0 AS FLOAT))")
       process_query(query)
     when "hfc"
       query = create_query(:highest,"fatal")
       process_query(query)
     when "hfp"
-      query = create_query(:highest,"CAST(fatal AS FLOAT)/(active+recovered+fatal)")
+      query = create_query(:highest,"COALESCE(CAST(fatal AS FLOAT)/NULLIF(active+recovered+fatal,0),CAST(0 AS FLOAT))")
       process_query(query)
     when "lfc"
       query = create_query(:lowest,"fatal")
       process_query(query)
     when "lfp"
-      query = create_query(:lowest,"CAST(fatal AS FLOAT)/(active+recovered+fatal)")
+      query = create_query(:lowest,"COALESCE(CAST(fatal AS FLOAT)/NULLIF(active+recovered+fatal,0),CAST(0 AS FLOAT))")
       process_query(query)
     when "htc"
       query = create_query(:highest,"active+recovered+fatal")
