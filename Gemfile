@@ -17,3 +17,7 @@ gem "redis"
 gem "execjs"
 gem 'watir'
 gem 'webdrivers'
+gem 'composite_primary_keys'
+gem 'jquery-rails'
+gem 'momentjs-rails'
+gem 'bootstrap-daterangepicker-rails'

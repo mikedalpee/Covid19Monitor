@@ -5,10 +5,13 @@
     "@rails/ujs": "^6.0.2-2",
     "@rails/webpacker": "^5.0.0",
     "bootstrap": "^4.4.1",
+    "bootstrap-datepicker": "^1.9.0",
     "chartkick": "^3.2.0",
     "coronapi": "^0.5.1",
+    "daterangepicker": "^3.0.5",
     "highcharts": "^8.0.4",
     "jquery": "^3.4.1",
+    "moment": "^2.24.0",
     "popper.js": "^1.16.1",
     "turbolinks": "^5.2.0"
   }

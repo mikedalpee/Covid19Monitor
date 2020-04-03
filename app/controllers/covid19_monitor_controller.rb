@@ -5,10 +5,10 @@ class Covid19MonitorController < ApplicationController
   def change_area_id(area_id)
     area_id = area_id || area_id('world')
     Globals.set(:area_id,area_id)
+    Covid19MonitorControllerHelper.set_date_range_for_area(Globals.get(:area_id))
   end
 
   def home
-    change_area_id(Globals.get(:area_id))
   end
 
   def select_area
@@ -16,7 +16,7 @@ class Covid19MonitorController < ApplicationController
     change_area_id(area_id)
     Globals.set(:query_id,"none")
     Globals.set(:query_duplicates,0)
-    render "home"
+    redirect_to root_path
   end
 
   def unselect_area
@@ -25,12 +25,12 @@ class Covid19MonitorController < ApplicationController
     change_area_id(parent_area_id)
     Globals.set(:query_id,"none")
     Globals.set(:query_duplicates,0)
-    render "home"
+    redirect_to root_path
   end
 
   def set_interval
     Globals.set(:data_interval,params[:interval])
-    render "home"
+    redirect_to root_path
   end
 
   def process_query(query)
@@ -60,7 +60,7 @@ class Covid19MonitorController < ApplicationController
         SELECT c.area_id, #{function}(#{column}) target_value 
         FROM areas a, cases c 
         WHERE c.area_id = a.area_id AND a.parent_area_id = #{Globals.get(:area_id)} AND (c.area_id,updated_at) IN 
-          (SELECT area_id, MAX(updated_at) max_updated_at 
+          (SELECT area_id, MAX(updated_at) max_updated_at
            FROM cases 
            GROUP BY area_id) 
         GROUP BY c.area_id 
@@ -117,7 +117,41 @@ class Covid19MonitorController < ApplicationController
     when "none"
       Globals.set(:query_duplicates,0)
     end
+    redirect_to root_path
+  end
 
-    render "home"
+  def check_samples(samples, updated_at)
+    if samples[:last_update].nil?
+      samples[:last_update] = updated_at
+     else
+      delta_t = samples[:last_update] - updated_at
+      samples[:total_elapsed_sample_time] += delta_t
+      if (samples[:total_elapsed_sample_time]/86400).floor > samples[:count]
+        samples[:count] += 1
+      end
+      samples[:last_update] = updated_at
+    end
+  end
+
+  def set_date_range
+    start_date = params[:start_date]
+    end_date = params[:end_date]
+
+    area_id = Globals.get(:area_id)
+    cases = Case.where("area_id = #{area_id} AND updated_at BETWEEN '#{start_date}' AND '#{end_date}'").distinct.order(updated_at: :desc)
+
+    samples = {last_value: nil, count: 0, total_elapsed_sample_time: 0.0}
+    cases.each do |a_case|
+      check_samples(samples, a_case.updated_at)
+      break if samples[:count] >= 4
+    end
+
+    if samples[:count] < 4
+      flash[:danger] = "Invalid date range chosen - less than 4 days of sample data exist between start date '#{start_date}' and end date '#{end_date}'"
+    else
+      Globals.set(:start_date,start_date)
+      Globals.set(:end_date,end_date)
+    end
+    redirect_to root_path
   end
 end

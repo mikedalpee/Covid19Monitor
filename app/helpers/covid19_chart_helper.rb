@@ -23,8 +23,16 @@ module Covid19ChartHelper
     number_to_percentage((ratio(numerator,denominator)*100.0).round(1),precision: 1)
   end
 
-  def progression(samples)
+  def change(samples)
+    samples[0].to_i+samples[1].to_i
+  end
+
+  def rate(samples)
     ratio(samples[0].to_i+samples[1].to_i,samples[2].to_i+samples[3].to_i)
+  end
+
+  def projection(value,rate,n)
+    value*((1+rate)**n)
   end
 
   def collect_samples(samples, value, updated_at)
@@ -47,7 +55,9 @@ module Covid19ChartHelper
 
   def create_info_tile()
     area_id = Globals.get(:area_id)
-    cases = Case.where(area_id: area_id).distinct.order(updated_at: :desc)
+    start_date = Globals.get(:start_date)
+    end_date = Globals.get(:end_date)
+    cases = Case.where("area_id = #{area_id} AND updated_at BETWEEN '#{start_date}' AND '#{end_date}'").distinct.order(updated_at: :desc)
     latest_case = cases.first
     total_confirmed = latest_case&.active+latest_case&.recovered+latest_case&.fatal
     active_samples = {last_value: nil, last_update: nil, samples_total: 0, samples_per_day: [], total_elapsed_sample_time: 0.0}
@@ -83,20 +93,23 @@ module Covid19ChartHelper
           <div class="description">Active cases</div>
           <div class="total">#{number_with_delimiter(latest_case&.active)}</div>
           <div class="total">(#{percentage(latest_case&.active,total_confirmed)})</div>
-          <div class="total">(#{active_samples[:samples_per_day][0]})</div>
-          <div class="total">(#{progression(active_samples[:samples_per_day]).round(1)})</div>
+          <div class="total">(#{number_with_delimiter(change(active_samples[:samples_per_day]))})</div>
+          <div class="total">(#{rate(active_samples[:samples_per_day]).round(1)})</div>
+          <div class="total">(#{number_with_delimiter(projection(latest_case&.active,rate(fatal_samples[:samples_per_day]),2).round)})</div>
           <div class="color" style="background: green;"></div>
           <div class="description">Recovered cases</div>
           <div class="total">#{number_with_delimiter(latest_case&.recovered)}</div>
           <div class="total">(#{percentage(latest_case&.recovered,total_confirmed)})</div>
-          <div class="total">(#{recovered_samples[:samples_per_day][0]})</div>
-          <div class="total">(#{progression(recovered_samples[:samples_per_day]).round(1)})</div>
+          <div class="total">(#{number_with_delimiter(change(recovered_samples[:samples_per_day]))})</div>
+          <div class="total">(#{rate(recovered_samples[:samples_per_day]).round(1)})</div>
+          <div class="total">(#{number_with_delimiter(projection(latest_case&.recovered,rate(fatal_samples[:samples_per_day]),2).round)})</div>
           <div class="color" style="background: red;"></div>
           <div class="description">Fatal cases</div>
           <div class="total">#{number_with_delimiter(latest_case&.fatal)}</div>
           <div class="total">(#{percentage(latest_case&.fatal,total_confirmed)})</div>
-          <div class="total">(#{fatal_samples[:samples_per_day][0]})</div>
-          <div class="total">(#{progression(fatal_samples[:samples_per_day]).round(1)})</div>
+          <div class="total">(#{number_with_delimiter(change(fatal_samples[:samples_per_day]))})</div>
+          <div class="total">(#{rate(fatal_samples[:samples_per_day]).round(1)})</div>
+          <div class="total">(#{number_with_delimiter(projection(latest_case&.fatal,rate(fatal_samples[:samples_per_day]),2).round)})</div>
         </div>
       &
     return info_tile.html_safe
@@ -149,33 +162,30 @@ module Covid19ChartHelper
     chart_id = 'covid-19-chart'
     area_id = Globals.get(:area_id)
     interval = Globals.get(:data_interval)
+    start_date = Globals.get(:start_date)
+    end_date = Globals.get(:end_date)
     title = create_chart_title(area_id)
     Rails.logger.log(Logger::INFO,"Creating cases chart")
     active = {}
     fatal = {}
     recovered= {}
     data_filter =  <<-SQL
-      WITH RECURSIVE data_filter(area_id, updated_at, active, recovered, fatal) AS (
-        SELECT cases.area_id,cases.updated_at,active,recovered,fatal
-        FROM
-          (SELECT area_id, MIN(updated_at) as updated_at
-           FROM cases
-           GROUP BY area_id HAVING area_id = #{area_id}) base_cases,cases 
-          WHERE base_cases.area_id = cases.area_id AND base_cases.updated_at = cases.updated_at
-        UNION (
-          SELECT cases.area_id, cases.updated_at, cases.active, cases.recovered, cases.fatal
-          FROM cases,data_filter,
-             (SELECT max_case.area_id,max_case.updated_at,active,recovered,fatal
-                FROM
-                (SELECT area_id, MAX(updated_at) as updated_at
-                 FROM cases
-                 GROUP BY area_id HAVING area_id = #{area_id}) base_cases,cases max_case
-               WHERE base_cases.area_id = max_case.area_id AND base_cases.updated_at = max_case.updated_at) full_max_case
-          WHERE cases.area_id = data_filter.area_id AND (cases.updated_at >= (data_filter.updated_at + INTERVAL '#{interval}') or cases.updated_at = full_max_case.updated_at)
-          ORDER BY cases.updated_at
-          LIMIT 1))
+       WITH RECURSIVE data_filter(area_id, updated_at, active, recovered, fatal) AS (
+        (SELECT area_id,updated_at,active,recovered,fatal
+        FROM cases
+        WHERE area_id = #{area_id} and updated_at >= '#{start_date}'
+        ORDER BY updated_at
+        LIMIT 1)
+        UNION
+        (SELECT c.area_id, c.updated_at, c.active, c.recovered, c.fatal
+        FROM cases c,data_filter df
+        WHERE c.area_id = df.area_id AND 
+	    	  (((df.updated_at + INTERVAL '#{interval}') <= '#{end_date}' AND c.updated_at >= (df.updated_at + INTERVAL '#{interval}')) OR
+		 	    ((SELECT MAX(updated_at) FROM cases WHERE area_id = #{area_id}) <= '#{end_date}' AND c.updated_at = (SELECT MAX(updated_at) FROM cases WHERE area_id = #{area_id})))
+        ORDER BY c.updated_at
+        LIMIT 1))
       SELECT * FROM data_filter
-  SQL
+    SQL
 
     ActiveRecord::Base.connection.execute(data_filter).each do |element|
       updated_at = element['updated_at'].to_s
@@ -224,6 +234,17 @@ module Covid19ChartHelper
     option_str += option("htc","Highest Total Confirmed Cases",selected)
     option_str += option("ltc","Lowest Total Confirmed Cases",selected)
     option_str.html_safe
+  end
+
+  def date_format()
+    "YYYY-MM-DD HH:mm:ss.SSSZ"
+  end
+
+  def create_daterangepicker_options()
+    option_str = <<-OPT
+      {locale: {format: '#{date_format}'},minDate: '#{Globals.get(:min_start_date)}',startDate: '#{Globals.get(:start_date)}',maxDate: '#{Globals.get(:max_end_date)}',endDate: '#{Globals.get(:end_date)}', drops: 'up'}
+    OPT
+    option_str.gsub(/[\n]/,'').html_safe
   end
 
 end

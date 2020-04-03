@@ -30,13 +30,13 @@ module ApplicationHelper
         if messages.is_a?(String)
           flash_array <<
               render(
-                  partial: 'shared/flash',
+                  partial: 'layouts/flash',
                   locals: { :type => type, :text => end_with_period(messages)}) unless messages.blank?
         elsif messages.respond_to?(:each)
           messages.each do |m|
             flash_array <<
                 render(
-                    partial: 'shared/flash',
+                    partial: 'layouts/flash',
                     locals: { :type => type, :text => end_with_period(m) }) unless m.blank?
           end
         end

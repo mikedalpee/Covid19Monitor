@@ -43,21 +43,44 @@ class Covid19CaseScraperJob
   def perform(*args)
     loop do
       begin
+        Rails.logger.log(Logger::INFO, "Pulling COVID-19 Data")
         page = Nokogiri::HTML(URI.open(URL,'User-Agent' => USER_AGENT, read_timeout: 10))
-        data = page.xpath("//body/div/script").text
-        session = ScrapeSession.new(headless: true)
-        json = data[9,data.length-10]
+        scripts = page.xpath("//head/script")
+        token_script = nil
+        scripts.each do |script|
+          if script.text.include?("var ig=")
+            token_script = script.text
+            break
+          end
+        end
+
+        if token_script.nil?
+          raise "Could not locate token script"
+        end
+
+        ig = nil
+        token = nil
+
+        /\"(?<ig>.*)".*token='(?<token>.*)'/ =~ token_script
+
+        token = Base64.strict_encode64(token)
+        page = Nokogiri::HTML(URI.open(URL+"/data?ig=#{ig}",'User-Agent' => USER_AGENT, 'Authorization' => "Basic "+token, read_timeout: 10))
+        json = page.text
+
         Rails.logger.log(Logger::INFO, "Updating COVID-19 Database")
         selected_changed = process_cases(JSON.parse(json))
         if selected_changed
           Rails.logger.log(Logger::INFO, "Data for selected area #{area_display_name(Globals.get(:area_id))} changed.")
+          max_date = Case.where(area_id: Globals.get(:area_id)).maximum("updated_at").strftime('%Y-%m-%d %H:%M:%S.%L%z')
+          Globals.set(:max_end_date,max_date)
           ActionCable.server.broadcast(
             "Covid19ChartUpdateChannel",
             {cases_chart: create_cases_chart(),
              info_tile: create_info_tile()})
         end
       rescue => e
-        Rails.logger.log(Logger::INFO, "Unable to get covid data from #{URL}")
+        Rails.logger.log(Logger::INFO, "Unable to get covid data due to exception: #{e}")
+        next
       end
       sleep(CASE_UPDATE_INTERVAL)
     end

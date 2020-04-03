@@ -13,8 +13,9 @@ class ScrapeSession
 
   attr_reader :browser, :min_goto_delay, :max_goto_delay, :headless, :proxy
 
-  def initialize(headless: true)
+  def initialize(headless: true, proxy_port: 0)
     @headless = headless
+    @proxy_port = proxy_port
     @user_agent = @@user_agents[rand(0..@@user_agents.size-1)]
     @chromedriver_path = File.join(ENV['HOME'],'.webdrivers','chromedriver')
     @args = ['--no-sandbox', '--ignore-certificate-errors', '--disable-popup-blocking', '--disable-translate', '--enable-crash-reporter',"--user-agent=#{@user_agent}"]
@@ -22,6 +23,9 @@ class ScrapeSession
     @terminated = false
     if @headless
       @args.push('--headless')
+    end
+    if @proxy_port != 0
+      @args.push("--proxy-server=localhost:#{@proxy_port}")
     end
   end
 
