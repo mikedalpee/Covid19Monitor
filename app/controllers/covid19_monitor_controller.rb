@@ -134,8 +134,8 @@ class Covid19MonitorController < ApplicationController
   end
 
   def set_date_range
-    start_date = params[:start_date]
-    end_date = params[:end_date]
+    start_date = params[:start_date]+" 00:00:00.000+0000"
+    end_date = params[:end_date]+" 23:59:59.999+0000"
 
     area_id = Globals.get(:area_id)
     cases = Case.where("area_id = #{area_id} AND updated_at BETWEEN '#{start_date}' AND '#{end_date}'").distinct.order(updated_at: :desc)
@@ -147,11 +147,12 @@ class Covid19MonitorController < ApplicationController
     end
 
     if samples[:count] < 4
-      flash[:danger] = "Invalid date range chosen - less than 4 days of sample data exist between start date '#{start_date}' and end date '#{end_date}'"
+      flash[:danger] = "Invalid date range chosen - less than 4 days of sample data exist between start date '#{start_date[0,10]}' and end date '#{end_date[0,10]}'"
     else
       Globals.set(:start_date,start_date)
       Globals.set(:end_date,end_date)
     end
     redirect_to root_path
   end
+
 end

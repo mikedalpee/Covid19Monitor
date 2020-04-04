@@ -172,19 +172,25 @@ module Covid19ChartHelper
     data_filter =  <<-SQL
        WITH RECURSIVE data_filter(area_id, updated_at, active, recovered, fatal) AS (
         (SELECT area_id,updated_at,active,recovered,fatal
-        FROM cases
-        WHERE area_id = #{area_id} AND updated_at >= '#{start_date}'
-        ORDER BY updated_at
-        LIMIT 1)
+         FROM cases
+         WHERE area_id = #{area_id} AND updated_at >= '#{start_date}'
+         ORDER BY updated_at
+         LIMIT 1)
         UNION
         (SELECT c.area_id, c.updated_at, c.active, c.recovered, c.fatal
-        FROM cases c,data_filter df
-        WHERE c.area_id = df.area_id AND 
-	    	  (((df.updated_at + INTERVAL '#{interval}') <= '#{end_date}' AND c.updated_at >= (df.updated_at + INTERVAL '#{interval}')) OR
-		 	     ((SELECT MAX(updated_at) FROM cases WHERE area_id = #{area_id}) <= '#{end_date}' AND c.updated_at = (SELECT MAX(updated_at) FROM cases WHERE area_id = #{area_id})))
-        ORDER BY c.updated_at
-        LIMIT 1))
-      SELECT * FROM data_filter ORDER BY updated_at
+         FROM cases c,data_filter df
+         WHERE c.area_id = df.area_id AND 
+	    	  (((df.updated_at + INTERVAL '#{interval}') <= '#{end_date}' AND 
+			       c.updated_at >= (df.updated_at + INTERVAL '#{interval}')) OR
+			     ((df.updated_at + INTERVAL '#{interval}') > '#{end_date}' AND
+			       c.updated_at = (SELECT updated_at 
+								             FROM cases 
+								             WHERE area_id = #{area_id} AND updated_at <= '#{end_date}' 
+								             ORDER BY updated_at DESC 
+								             LIMIT 1)))
+         ORDER BY c.updated_at
+         LIMIT 1))
+       SELECT * FROM data_filter ORDER BY updated_at
     SQL
 
     ActiveRecord::Base.connection.execute(data_filter).each do |element|
@@ -237,7 +243,7 @@ module Covid19ChartHelper
   end
 
   def date_format
-    "YYYY-MM-DD HH:mm:ss.SSS[Z]"
+    "YYYY-MM-DD"
   end
 
   def create_daterangepicker_options
@@ -252,13 +258,14 @@ module Covid19ChartHelper
     javascript = <<-SCRIPT
       <script>
         $(function() {
-          $('#covid19-date-range').daterangepicker(#{create_daterangepicker_options},
-          function(start,end,label){
-            var date_format = '#{date_format}';
-            var url='/set_date_range/'+encodeURIComponent(start.format(date_format))+'/'+encodeURIComponent(end.format(date_format));
-            location.replace(url);
-          });
-        });
+          $('#covid19-date-range').daterangepicker(
+            #{create_daterangepicker_options},
+            function(start,end,label){
+              var date_format = '#{date_format}';
+              var url='/set_date_range/'+encodeURIComponent(start.format(date_format))+'/'+encodeURIComponent(end.format(date_format));
+              location.replace(url)
+            })
+        })
       </script>
     SCRIPT
     javascript.html_safe

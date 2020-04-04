@@ -1,8 +1,8 @@
 module Covid19MonitorControllerHelper
 
   def self.set_date_range_for_area(area_id)
-    min_date = Case.where(area_id: area_id).minimum("updated_at").strftime('%Y-%m-%d %H:%M:%S.%L%z')
-    max_date = Case.where(area_id: area_id).maximum("updated_at").strftime('%Y-%m-%d %H:%M:%S.%L%z')
+    min_date = Case.where(area_id: area_id).minimum("updated_at").strftime('%Y-%m-%d')+" 00:00:00.000+0000"
+    max_date = Case.where(area_id: area_id).maximum("updated_at").strftime('%Y-%m-%d')+" 23:59:59.999+0000"
     Globals.set(:min_start_date,min_date)
     Globals.set(:max_end_date,max_date)
     start_date = Globals.get(:start_date)
