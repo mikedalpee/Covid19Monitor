@@ -3,12 +3,12 @@
     .flex-item.appName
       COVID-19 Trends
     .flex-item.infoTile#covid19-info-tile
-      = create_info_tile()
+      = create_info_tile
     .flex-item#covid19-select-by-query
       %label Select by Query
       %br/
       %select#query_id{name: "query[id]"}
-        = create_query_options()
+        = create_query_options
       :javascript
          jQuery(function($) {
           $("#query_id").change(function() {
@@ -19,19 +19,19 @@
           });
         })
     %nav.flex-item#covid19-selected-buttons
-      = create_selected_buttons()
+      = create_selected_buttons
     %nav.flex-item#covid19-area-buttons.flex-list
-      = create_area_buttons()
+      = create_area_buttons
   .flex-column
     .flex-item#covid19-cases-chart
-      = create_cases_chart()
+      = create_cases_chart
     .flex-row{style: "align-items: center; justify-content: center;"}
       .flex-column
         .flex-item{style: "text-align: center; width: 100%;"}
           %label Plot Interval
           %br/
           %select#plot_interval_id{name: "plot_interval[id]"}
-            = create_interval_options()
+            = create_interval_options
           :javascript
             jQuery(function($) {
               $("#plot_interval_id").change(function() {
@@ -46,12 +46,4 @@
           %label Plot Date Range
           %br/
           %input.daterange#covid19-date-range{type: 'text', size: 50, style: "text-align: center;"}
-          :javascript
-            $(function() {
-              $('#covid19-date-range').daterangepicker(#{create_daterangepicker_options},
-              function(start,end,label){
-                  var date_format = '#{date_format}';
-                  var url='/set_date_range/'+encodeURIComponent(start.format(date_format))+'/'+encodeURIComponent(end.format(date_format));
-                  location.replace(url);
-               });
-            });
+            = create_daterangepicker_javascript

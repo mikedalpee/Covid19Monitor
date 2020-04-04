@@ -53,7 +53,7 @@ module Covid19ChartHelper
     end
   end
 
-  def create_info_tile()
+  def create_info_tile
     area_id = Globals.get(:area_id)
     start_date = Globals.get(:start_date)
     end_date = Globals.get(:end_date)
@@ -115,7 +115,7 @@ module Covid19ChartHelper
     return info_tile.html_safe
   end
 
-  def create_selected_buttons()
+  def create_selected_buttons
     selected_area_id = Globals.get(:area_id)
     selected_area = Area.find(selected_area_id)
     selected_buttons = [selected_area]
@@ -137,7 +137,7 @@ module Covid19ChartHelper
     selected_buttons_str.html_safe
   end
 
-  def create_area_buttons()
+  def create_area_buttons
     area_id = Globals.get(:area_id)
     immediate_child_areas = Area.where(parent_area_id: area_id).order(:display_name)
     area_buttons_str = ""
@@ -158,7 +158,7 @@ module Covid19ChartHelper
     title
   end
 
-  def create_cases_chart()
+  def create_cases_chart
     chart_id = 'covid-19-chart'
     area_id = Globals.get(:area_id)
     interval = Globals.get(:data_interval)
@@ -173,7 +173,7 @@ module Covid19ChartHelper
        WITH RECURSIVE data_filter(area_id, updated_at, active, recovered, fatal) AS (
         (SELECT area_id,updated_at,active,recovered,fatal
         FROM cases
-        WHERE area_id = #{area_id} and updated_at >= '#{start_date}'
+        WHERE area_id = #{area_id} AND updated_at >= '#{start_date}'
         ORDER BY updated_at
         LIMIT 1)
         UNION
@@ -181,10 +181,10 @@ module Covid19ChartHelper
         FROM cases c,data_filter df
         WHERE c.area_id = df.area_id AND 
 	    	  (((df.updated_at + INTERVAL '#{interval}') <= '#{end_date}' AND c.updated_at >= (df.updated_at + INTERVAL '#{interval}')) OR
-		 	    ((SELECT MAX(updated_at) FROM cases WHERE area_id = #{area_id}) <= '#{end_date}' AND c.updated_at = (SELECT MAX(updated_at) FROM cases WHERE area_id = #{area_id})))
+		 	     ((SELECT MAX(updated_at) FROM cases WHERE area_id = #{area_id}) <= '#{end_date}' AND c.updated_at = (SELECT MAX(updated_at) FROM cases WHERE area_id = #{area_id})))
         ORDER BY c.updated_at
         LIMIT 1))
-      SELECT * FROM data_filter
+      SELECT * FROM data_filter ORDER BY updated_at
     SQL
 
     ActiveRecord::Base.connection.execute(data_filter).each do |element|
@@ -206,7 +206,7 @@ module Covid19ChartHelper
     '<option value="'+value+'"'+ (selected == value ? " selected" : "")+'>'+label+'</option>'
   end
 
-  def create_interval_options()
+  def create_interval_options
     selected = Globals.get(:data_interval)
     option_str  = option("6 hours","Every 6 Hours",selected)
     option_str += option("12 hours","Every 12 Hours",selected)
@@ -216,7 +216,7 @@ module Covid19ChartHelper
     option_str.html_safe
   end
 
-  def create_query_options()
+  def create_query_options
     selected = Globals.get(:query_id)
     option_str = option("none","None",selected)
     option_str += option("hac","Highest Active Cases",selected)
@@ -236,15 +236,32 @@ module Covid19ChartHelper
     option_str.html_safe
   end
 
-  def date_format()
-    "YYYY-MM-DD HH:mm:ss.SSSZ"
+  def date_format
+    "YYYY-MM-DD HH:mm:ss.SSS[Z]"
   end
 
-  def create_daterangepicker_options()
-    option_str = <<-OPT
+  def create_daterangepicker_options
+    options = <<-OPT
       {locale: {format: '#{date_format}'},minDate: '#{Globals.get(:min_start_date)}',startDate: '#{Globals.get(:start_date)}',maxDate: '#{Globals.get(:max_end_date)}',endDate: '#{Globals.get(:end_date)}', drops: 'up'}
     OPT
-    option_str.gsub(/[\n]/,'').html_safe
+
+    options.gsub(/[\n]/,'')
+  end
+
+  def create_daterangepicker_javascript
+    javascript = <<-SCRIPT
+      <script>
+        $(function() {
+          $('#covid19-date-range').daterangepicker(#{create_daterangepicker_options},
+          function(start,end,label){
+            var date_format = '#{date_format}';
+            var url='/set_date_range/'+encodeURIComponent(start.format(date_format))+'/'+encodeURIComponent(end.format(date_format));
+            location.replace(url);
+          });
+        });
+      </script>
+    SCRIPT
+    javascript.html_safe
   end
 
 end

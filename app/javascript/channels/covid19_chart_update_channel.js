@@ -16,6 +16,7 @@ consumer.subscriptions.create("Covid19ChartUpdateChannel", {
     console.log("Received data from Covid19ChartUpdateChannel!")
 
     if ("info_tile" in data) {
+      $('#covid19-date-range').html(data.daterangepicker_javascript);
       $('#covid19-info-tile').html(data.info_tile);
       $('#covid19-cases-chart').html(data.cases_chart);
     }

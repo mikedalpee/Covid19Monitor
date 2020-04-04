@@ -40,43 +40,47 @@ class Covid19CaseScraperJob
     return selected_changed
   end
 
+  def get_covid_data
+    page = Nokogiri::HTML(URI.open(URL,'User-Agent' => USER_AGENT, read_timeout: 10))
+    scripts = page.xpath("//head/script")
+    token_script = nil
+    scripts.each do |script|
+      if script.text.include?("var ig=")
+        token_script = script.text
+        break
+      end
+    end
+
+    if token_script.nil?
+      raise "Could not locate token script"
+    end
+
+    ig = nil
+    token = nil
+
+    /\"(?<ig>.*)".*token='(?<token>.*)'/ =~ token_script
+
+    token = Base64.strict_encode64(token)
+    page = Nokogiri::HTML(URI.open(URL+"/data?ig=#{ig}",'User-Agent' => USER_AGENT, 'Authorization' => "Basic "+token, read_timeout: 10))
+    page.text
+  end
+
   def perform(*args)
     loop do
       begin
         Rails.logger.log(Logger::INFO, "Pulling COVID-19 Data")
-        page = Nokogiri::HTML(URI.open(URL,'User-Agent' => USER_AGENT, read_timeout: 10))
-        scripts = page.xpath("//head/script")
-        token_script = nil
-        scripts.each do |script|
-          if script.text.include?("var ig=")
-            token_script = script.text
-            break
-          end
-        end
-
-        if token_script.nil?
-          raise "Could not locate token script"
-        end
-
-        ig = nil
-        token = nil
-
-        /\"(?<ig>.*)".*token='(?<token>.*)'/ =~ token_script
-
-        token = Base64.strict_encode64(token)
-        page = Nokogiri::HTML(URI.open(URL+"/data?ig=#{ig}",'User-Agent' => USER_AGENT, 'Authorization' => "Basic "+token, read_timeout: 10))
-        json = page.text
-
+        json = get_covid_data()
         Rails.logger.log(Logger::INFO, "Updating COVID-19 Database")
         selected_changed = process_cases(JSON.parse(json))
         if selected_changed
           Rails.logger.log(Logger::INFO, "Data for selected area #{area_display_name(Globals.get(:area_id))} changed.")
           max_date = Case.where(area_id: Globals.get(:area_id)).maximum("updated_at").strftime('%Y-%m-%d %H:%M:%S.%L%z')
-          Globals.set(:max_end_date,max_date)
+          Y           Globals.set(:max_end_date,max_date)
           ActionCable.server.broadcast(
             "Covid19ChartUpdateChannel",
-            {cases_chart: create_cases_chart(),
-             info_tile: create_info_tile()})
+            {daterangepicker_javascript: create_daterangepicker_javascript,
+             cases_chart: create_cases_chart,
+             info_tile: create_info_tile})
         end
       rescue => e
         Rails.logger.log(Logger::INFO, "Unable to get covid data due to exception: #{e}")
