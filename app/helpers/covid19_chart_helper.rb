@@ -178,18 +178,16 @@ module Covid19ChartHelper
          LIMIT 1)
         UNION
         (SELECT c.area_id, c.updated_at, c.active, c.recovered, c.fatal
-         FROM cases c,data_filter df
-         WHERE c.area_id = df.area_id AND 
-	    	  (((df.updated_at + INTERVAL '#{interval}') <= '#{end_date}' AND 
-			       c.updated_at >= (df.updated_at + INTERVAL '#{interval}')) OR
-			     ((df.updated_at + INTERVAL '#{interval}') > '#{end_date}' AND
-			       c.updated_at = (SELECT updated_at 
-								             FROM cases 
-								             WHERE area_id = #{area_id} AND updated_at <= '#{end_date}' 
-								             ORDER BY updated_at DESC 
-								             LIMIT 1)))
+         FROM (SELECT * FROM data_filter ORDER BY updated_at DESC) df JOIN cases c ON df.area_id = c.area_id
+		     WHERE c.updated_at >= (df.updated_at + INTERVAL '#{interval}') OR 
+		           c.updated_at = (SELECT updated_at
+							                 FROM cases 
+							                 WHERE area_id = #{area_id} AND updated_at <= '#{end_date}' 
+							                 ORDER BY updated_at DESC
+							                 LIMIT 1)
          ORDER BY c.updated_at
-         LIMIT 1))
+		     LIMIT 1)
+	   )
        SELECT * FROM data_filter ORDER BY updated_at
     SQL
 
