@@ -187,7 +187,7 @@ module Covid19ChartHelper
 							                 LIMIT 1)
          ORDER BY c.updated_at
 		     LIMIT 1)
-	   )
+	     )
        SELECT * FROM data_filter ORDER BY updated_at
     SQL
 
