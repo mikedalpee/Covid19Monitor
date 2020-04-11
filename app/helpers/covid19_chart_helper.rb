@@ -57,15 +57,25 @@ module Covid19ChartHelper
     area_id = Globals.get(:area_id)
     start_date = Globals.get(:start_date)
     end_date = Globals.get(:end_date)
-    cases = Case.where("area_id = #{area_id} AND updated_at BETWEEN '#{start_date}' AND '#{end_date}'").distinct.order(updated_at: :desc)
-    latest_case = cases.first
-    total_confirmed = latest_case&.active+latest_case&.recovered+latest_case&.fatal
     active_samples = {last_value: nil, last_update: nil, samples_total: 0, samples_per_day: [], total_elapsed_sample_time: 0.0}
     recovered_samples = {last_value: nil, last_update: nil, samples_total: 0, samples_per_day: [], total_elapsed_sample_time: 0.0}
     fatal_samples = {last_value: nil, last_update: nil, samples_total: 0, samples_per_day: [], total_elapsed_sample_time: 0.0}
     active_done = false
     recovered_done = false
     fatal_done = false
+    active = 0
+    recovered = 0
+    fatal = 0
+    cases = Case.where("area_id = #{area_id} AND updated_at BETWEEN '#{start_date}' AND '#{end_date}'").distinct.order(updated_at: :desc)
+    latest_case = cases.first
+    if latest_case.nil?
+      Rails.logger.log(Logger::ERROR, "Unable to retrieve between start date '#{start_date}' and end date '#{end_date}'")
+    else
+      active = (latest_case&.active).to_i
+      recovered = (latest_case&.recovered).to_i
+      fatal = (latest_case&.fatal).to_i
+    end
+
     cases.each do |a_case|
       break if active_done && recovered_done && fatal_done
 
@@ -84,32 +94,32 @@ module Covid19ChartHelper
         fatal_done = fatal_samples[:total_elapsed_sample_time] >= 86400*4 #4 days
       end
     end
-
+    total_confirmed = active+recovered+fatal
     info_tile =
       %&<div class="title" title="Total Confirmed Cases">Total Confirmed Cases</div>
         <div class="confirmed">#{number_with_delimiter(total_confirmed)}</div>
         <div class="legend">
           <div class="color" style="background: orange;"></div>
           <div class="description">Active cases</div>
-          <div class="total">#{number_with_delimiter(latest_case&.active)}</div>
-          <div class="total">(#{percentage(latest_case&.active,total_confirmed)})</div>
+          <div class="total">#{number_with_delimiter(active)}</div>
+          <div class="total">(#{percentage(active,total_confirmed)})</div>
           <div class="total">(#{number_with_delimiter(change(active_samples[:samples_per_day]))})</div>
           <div class="total">(#{rate(active_samples[:samples_per_day]).round(1)})</div>
-          <div class="total">(#{number_with_delimiter(projection(latest_case&.active,rate(fatal_samples[:samples_per_day]),2).round)})</div>
+          <div class="total">(#{number_with_delimiter(projection(active,rate(fatal_samples[:samples_per_day]),2).round)})</div>
           <div class="color" style="background: green;"></div>
           <div class="description">Recovered cases</div>
-          <div class="total">#{number_with_delimiter(latest_case&.recovered)}</div>
-          <div class="total">(#{percentage(latest_case&.recovered,total_confirmed)})</div>
+          <div class="total">#{number_with_delimiter(recovered)}</div>
+          <div class="total">(#{percentage(recovered,total_confirmed)})</div>
           <div class="total">(#{number_with_delimiter(change(recovered_samples[:samples_per_day]))})</div>
           <div class="total">(#{rate(recovered_samples[:samples_per_day]).round(1)})</div>
-          <div class="total">(#{number_with_delimiter(projection(latest_case&.recovered,rate(fatal_samples[:samples_per_day]),2).round)})</div>
+          <div class="total">(#{number_with_delimiter(projection(recovered,rate(fatal_samples[:samples_per_day]),2).round)})</div>
           <div class="color" style="background: red;"></div>
           <div class="description">Fatal cases</div>
-          <div class="total">#{number_with_delimiter(latest_case&.fatal)}</div>
-          <div class="total">(#{percentage(latest_case&.fatal,total_confirmed)})</div>
+          <div class="total">#{number_with_delimiter(fatal)}</div>
+          <div class="total">(#{percentage(fatal,total_confirmed)})</div>
           <div class="total">(#{number_with_delimiter(change(fatal_samples[:samples_per_day]))})</div>
           <div class="total">(#{rate(fatal_samples[:samples_per_day]).round(1)})</div>
-          <div class="total">(#{number_with_delimiter(projection(latest_case&.fatal,rate(fatal_samples[:samples_per_day]),2).round)})</div>
+          <div class="total">(#{number_with_delimiter(projection(fatal,rate(fatal_samples[:samples_per_day]),2).round)})</div>
         </div>
       &
     return info_tile.html_safe

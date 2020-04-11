@@ -63,6 +63,7 @@ class Covid19CaseScraperJob
     token = Base64.strict_encode64(token)
     page = Nokogiri::HTML(URI.open(URL+"/data?ig=#{ig}",'User-Agent' => USER_AGENT, 'Authorization' => "Basic "+token, read_timeout: 10))
     page.text
+    JSON.parse(page.text)
   end
 
   def perform(*args)
@@ -71,7 +72,7 @@ class Covid19CaseScraperJob
         Rails.logger.log(Logger::INFO, "Pulling COVID-19 Data")
         json = get_covid_data()
         Rails.logger.log(Logger::INFO, "Updating COVID-19 Database")
-        selected_changed = process_cases(JSON.parse(json))
+        selected_changed = process_cases(json)
         if selected_changed
           Rails.logger.log(Logger::INFO, "Data for selected area #{area_display_name(Globals.get(:area_id))} changed.")
           max_date = Case.where(area_id: Globals.get(:area_id)).maximum("updated_at").strftime('%Y-%m-%d')+" 23.59.59.999+000"
@@ -83,7 +84,7 @@ class Covid19CaseScraperJob
              info_tile: create_info_tile})
         end
       rescue => e
-        Rails.logger.log(Logger::INFO, "Unable to get covid data due to exception: #{e}")
+        Rails.logger.log(Logger::ERROR, "Unable to get covid data due to exception: #{e}")
         next
       end
       sleep(CASE_UPDATE_INTERVAL)
