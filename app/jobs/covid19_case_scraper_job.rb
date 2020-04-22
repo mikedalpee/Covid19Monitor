@@ -74,9 +74,9 @@ class Covid19CaseScraperJob
         Rails.logger.log(Logger::INFO, "Updating COVID-19 Database")
         selected_changed = process_cases(json)
         if selected_changed
-          Rails.logger.log(Logger::INFO, "Data for selected area #{area_display_name(Globals.get(:area_id))} changed.")
           max_date = Case.where(area_id: Globals.get(:area_id)).maximum("updated_at").strftime('%Y-%m-%d')+" 23.59.59.999+000"
           Globals.set(:max_end_date,max_date)
+          Rails.logger.log(Logger::INFO, "Data for selected area #{area_display_name(Globals.get(:area_id))} changed (max_end_date: #{Globals.get(:max_end_date)}).")
           ActionCable.server.broadcast(
             "Covid19ChartUpdateChannel",
             {daterangepicker_javascript: create_daterangepicker_javascript,

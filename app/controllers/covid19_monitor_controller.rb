@@ -58,8 +58,11 @@ class Covid19MonitorController < ApplicationController
     end
     <<-SQL
         SELECT c.area_id, #{function}(#{column}) target_value 
-        FROM areas a, cases c 
-        WHERE c.area_id = a.area_id AND a.parent_area_id = #{Globals.get(:area_id)} AND (c.area_id,updated_at) IN 
+        FROM cases c 
+        WHERE c.area_id IN
+          (SELECT area_id
+           FROM areas
+           WHERE parent_area_id = #{Globals.get(:area_id)}) AND (c.area_id,updated_at) IN 
           (SELECT area_id, MAX(updated_at) max_updated_at
            FROM cases 
            GROUP BY area_id) 
