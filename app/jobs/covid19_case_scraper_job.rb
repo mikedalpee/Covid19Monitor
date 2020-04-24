@@ -42,28 +42,30 @@ class Covid19CaseScraperJob
 
   def get_covid_data
     page = Nokogiri::HTML(URI.open(URL,'User-Agent' => USER_AGENT, read_timeout: 10))
-    scripts = page.xpath("//head/script")
-    token_script = nil
-    scripts.each do |script|
-      if script.text.include?("var ig=")
-        token_script = script.text
-        break
-      end
-    end
-
-    if token_script.nil?
-      raise "Could not locate token script"
-    end
-
-    ig = nil
-    token = nil
-
-    /\"(?<ig>.*)".*token='(?<token>.*)'/ =~ token_script
-
-    token = Base64.strict_encode64(token)
-    page = Nokogiri::HTML(URI.open(URL+"/data?ig=#{ig}",'User-Agent' => USER_AGENT, 'Authorization' => "Basic "+token, read_timeout: 10))
-    page.text
-    JSON.parse(page.text)
+    script = page.xpath("//div[@id='main']/script").text[9..-2]
+    JSON.parse(script)
+    # scripts = page.xpath("//head/script")
+    # token_script = nil
+    # scripts.each do |script|
+    #   if script.text.include?("var ig=")
+    #     token_script = script.text
+    #     break
+    #   end
+    # end
+    #
+    # if token_script.nil?
+    #   raise "Could not locate token script"
+    # end
+    #
+    # ig = nil
+    # token = nil
+    #
+    # /\"(?<ig>.*)".*token='(?<token>.*)'/ =~ token_script
+    #
+    # token = Base64.strict_encode64(token)
+    # page = Nokogiri::HTML(URI.open(URL+"/data?ig=#{ig}",'User-Agent' => USER_AGENT, 'Authorization' => "Basic "+token, read_timeout: 10))
+    # page.text
+    # JSON.parse(page.text)
   end
 
   def perform(*args)
